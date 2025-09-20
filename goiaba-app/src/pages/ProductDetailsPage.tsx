@@ -92,7 +92,8 @@ const ProductDetailsPage: React.FC = () => {
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent fullscreen>
+            <IonContent fullscreen scrollY={true} className="ion-padding">
+                <div className="product-details-container">
                 {selectedRegion && (
                     <IonItem lines="none">
                         <IonLabel>
@@ -199,6 +200,7 @@ const ProductDetailsPage: React.FC = () => {
                         )}
                     </IonCardContent>
                 </IonCard>
+                </div>
             </IonContent>
             
             <CartModal 
