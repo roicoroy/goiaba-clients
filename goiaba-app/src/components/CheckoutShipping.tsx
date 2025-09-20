@@ -15,8 +15,8 @@ import {
   IonSpinner,
 } from '@ionic/react';
 import { car } from 'ionicons/icons';
+import { useCartShippingOptions } from 'medusa-react';
 import { useCartContext } from '../contexts/CartContext';
-import { useCheckoutContext } from '../contexts/CheckoutContext';
 import { useMedusa } from 'medusa-react';
 import { formatPrice } from '../utils/formatters';
 
@@ -27,30 +27,31 @@ interface CheckoutShippingProps {
 
 const CheckoutShipping: React.FC<CheckoutShippingProps> = ({ onNext, onPrevious }) => {
   const { cart } = useCartContext();
-  const { 
-    shippingMethods, 
-    selectedShippingMethod, 
-    setSelectedShippingMethod,
-    loadShippingMethods 
-  } = useCheckoutContext();
+  const { shipping_options, isLoading: optionsLoading } = useCartShippingOptions(cart?.id || '', {
+    enabled: !!cart?.id,
+  });
   const { client } = useMedusa();
   
+  const [selectedShippingOptionId, setSelectedShippingOptionId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-select first shipping option if available
   useEffect(() => {
-    loadShippingMethods();
-  }, []);
+    if (shipping_options && shipping_options.length > 0 && !selectedShippingOptionId) {
+      setSelectedShippingOptionId(shipping_options[0].id);
+    }
+  }, [shipping_options, selectedShippingOptionId]);
 
   const handleAddShippingMethod = async () => {
-    if (!cart?.id || !selectedShippingMethod) return;
+    if (!cart?.id || !selectedShippingOptionId) return;
     
     try {
       setIsLoading(true);
       setError(null);
       
       await client.carts.addShippingMethod(cart.id, {
-        option_id: selectedShippingMethod.id,
+        option_id: selectedShippingOptionId,
       });
       
       onNext();
@@ -62,7 +63,7 @@ const CheckoutShipping: React.FC<CheckoutShippingProps> = ({ onNext, onPrevious 
     }
   };
 
-  const canProceed = selectedShippingMethod !== null;
+  const canProceed = selectedShippingOptionId !== '';
 
   return (
     <>
@@ -74,21 +75,27 @@ const CheckoutShipping: React.FC<CheckoutShippingProps> = ({ onNext, onPrevious 
           </IonCardTitle>
         </IonCardHeader>
         <IonCardContent>
-          {shippingMethods.length > 0 ? (
+          {optionsLoading ? (
+            <IonItem>
+              <IonLabel>
+                <IonText color="medium">Loading shipping options...</IonText>
+              </IonLabel>
+              <IonSpinner slot="end" />
+            </IonItem>
+          ) : shipping_options && shipping_options.length > 0 ? (
             <IonRadioGroup 
-              value={selectedShippingMethod?.id} 
+              value={selectedShippingOptionId} 
               onIonChange={(e) => {
-                const method = shippingMethods.find(m => m.id === e.detail.value);
-                if (method) setSelectedShippingMethod(method);
+                setSelectedShippingOptionId(e.detail.value);
               }}
             >
               <IonList>
-                {shippingMethods.map((method) => (
-                  <IonItem key={method.id}>
-                    <IonRadio slot="start" value={method.id} />
+                {shipping_options.map((option) => (
+                  <IonItem key={option.id}>
+                    <IonRadio slot="start" value={option.id} />
                     <IonLabel>
-                      <h3>{method.name}</h3>
-                      <p>{formatPrice(method.amount, method.currency_code)}</p>
+                      <h3>{option.name}</h3>
+                      <p>{formatPrice(option.amount || 0, cart?.currency_code || 'USD')}</p>
                     </IonLabel>
                   </IonItem>
                 ))}
