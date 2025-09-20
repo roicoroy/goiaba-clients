@@ -70,6 +70,7 @@ const App: React.FC = () => {
               <Redirect to={isAuthenticated() ? "/tabs/tab1" : "/login"} />
               <Route path="/checkout" component={CheckoutPage} exact={true} />
             </Route>
+            <Route path="/checkout" component={CheckoutPage} exact={true} />
           </IonRouterOutlet>
         </IonReactRouter>
       </IonApp>

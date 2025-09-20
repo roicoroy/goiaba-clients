@@ -18,8 +18,10 @@ import { useCartContext } from '../contexts/CartContext';
 import { useCheckoutContext } from '../contexts/CheckoutContext';
 import { useMedusa } from 'medusa-react';
 
-// Initialize Stripe - you'll need to replace this with your publishable key
-const stripePromise = loadStripe('pk_test_your_stripe_publishable_key_here');
+import { API_CONFIG } from '../utils/constants';
+
+// Initialize Stripe with the publishable key
+const stripePromise = loadStripe(API_CONFIG.STRIPE_PUBLISHABLE_KEY);
 
 interface CheckoutPaymentProps {
   onNext: () => void;

@@ -1,6 +1,7 @@
 export const API_CONFIG = {
   BASE_URL: 'http://localhost:9000',
   PUBLISHABLE_KEY: 'pk_edc04a825a6de55a445591da014137039c2affad5b75340ee3cfa960db5dd28c',
+  STRIPE_PUBLISHABLE_KEY: 'pk_test_51•••••I2Y', // Replace with your actual Stripe publishable key
 } as const;
 
 export const STORAGE_KEYS = {

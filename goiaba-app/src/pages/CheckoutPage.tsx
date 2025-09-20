@@ -20,132 +20,24 @@ import {
   IonSpinner,
   IonToast,
 } from '@ionic/react';
-import { checkmarkCircle, card, location, carOutline } from 'ionicons/icons';
+import { checkmarkCircle, card, location, truck } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useCartContext } from '../contexts/CartContext';
 import { useCustomerContext } from '../contexts/CustomerContext';
 import { useCheckoutContext } from '../contexts/CheckoutContext';
+import CheckoutAddresses from '../components/CheckoutAddresses';
+import CheckoutShipping from '../components/CheckoutShipping';
+import CheckoutPayment from '../components/CheckoutPayment';
+import CheckoutReview from '../components/CheckoutReview';
 import { formatPrice } from '../utils/formatters';
 import './CheckoutPage.css';
 
-// Simple checkout step components for now
-const CheckoutAddresses: React.FC<{ onNext: () => void; onPrevious: () => void }> = ({ onNext }) => (
-  <IonCard>
-    <IonCardHeader>
-      <IonCardTitle>
-        <IonIcon icon={location} style={{ marginRight: '8px' }} />
-        Select Addresses
-      </IonCardTitle>
-    </IonCardHeader>
-    <IonCardContent>
-      <IonItem>
-        <IonLabel>
-          <h3>Address Selection</h3>
-          <p>Choose your shipping and billing addresses</p>
-        </IonLabel>
-      </IonItem>
-      <IonButton expand="block" onClick={onNext} style={{ marginTop: '1rem' }}>
-        Continue to Shipping
-      </IonButton>
-    </IonCardContent>
-  </IonCard>
-);
-
-const CheckoutShipping: React.FC<{ onNext: () => void; onPrevious: () => void }> = ({ onNext, onPrevious }) => (
-  <IonCard>
-    <IonCardHeader>
-      <IonCardTitle>
-        <IonIcon icon={carOutline} style={{ marginRight: '8px' }} />
-        Shipping Method
-      </IonCardTitle>
-    </IonCardHeader>
-    <IonCardContent>
-      <IonItem>
-        <IonLabel>
-          <h3>Standard Shipping</h3>
-          <p>5-7 business days - Free</p>
-        </IonLabel>
-      </IonItem>
-      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-        <IonButton expand="block" fill="outline" onClick={onPrevious}>
-          Back
-        </IonButton>
-        <IonButton expand="block" onClick={onNext}>
-          Continue to Payment
-        </IonButton>
-      </div>
-    </IonCardContent>
-  </IonCard>
-);
-
-const CheckoutPayment: React.FC<{ onNext: () => void; onPrevious: () => void }> = ({ onNext, onPrevious }) => (
-  <IonCard>
-    <IonCardHeader>
-      <IonCardTitle>
-        <IonIcon icon={card} style={{ marginRight: '8px' }} />
-        Payment Method
-      </IonCardTitle>
-    </IonCardHeader>
-    <IonCardContent>
-      <IonItem>
-        <IonLabel>
-          <h3>Credit Card</h3>
-          <p>Secure payment via Stripe</p>
-        </IonLabel>
-      </IonItem>
-      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-        <IonButton expand="block" fill="outline" onClick={onPrevious}>
-          Back
-        </IonButton>
-        <IonButton expand="block" onClick={onNext}>
-          Review Order
-        </IonButton>
-      </div>
-    </IonCardContent>
-  </IonCard>
-);
-
-const CheckoutReview: React.FC<{ onNext: () => void; onPrevious: () => void }> = ({ onPrevious }) => {
-  const history = useHistory();
-  
-  const handleCompleteOrder = () => {
-    // For now, just redirect back to products
-    history.push('/tabs/tab1');
-  };
-
-  return (
-    <IonCard>
-      <IonCardHeader>
-        <IonCardTitle>
-          <IonIcon icon={checkmarkCircle} style={{ marginRight: '8px' }} />
-          Review Order
-        </IonCardTitle>
-      </IonCardHeader>
-      <IonCardContent>
-        <IonItem>
-          <IonLabel>
-            <h3>Order Summary</h3>
-            <p>Review your order details before completing</p>
-          </IonLabel>
-        </IonItem>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <IonButton expand="block" fill="outline" onClick={onPrevious}>
-            Back
-          </IonButton>
-          <IonButton expand="block" color="success" onClick={handleCompleteOrder}>
-            Complete Order
-          </IonButton>
-        </div>
-      </IonCardContent>
-    </IonCard>
-  );
-};
 
 const CheckoutPage: React.FC = () => {
   const history = useHistory();
   const { cart } = useCartContext();
   const { customer } = useCustomerContext();
-  const [currentStep, setCurrentStep] = useState(0);
+  const { currentStep, setCurrentStep, completedOrder } = useCheckoutContext();
   
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -153,10 +45,17 @@ const CheckoutPage: React.FC = () => {
 
   const steps = [
     { title: 'Addresses', icon: location, component: CheckoutAddresses },
-    { title: 'Shipping', icon: carOutline, component: CheckoutShipping },
+    { title: 'Shipping', icon: truck, component: CheckoutShipping },
     { title: 'Payment', icon: card, component: CheckoutPayment },
     { title: 'Review', icon: checkmarkCircle, component: CheckoutReview },
   ];
+
+  // Handle order completion navigation
+  useEffect(() => {
+    if (completedOrder) {
+      history.push(`/tabs/order-confirmation/${completedOrder.id}`);
+    }
+  }, [completedOrder, history]);
 
   useEffect(() => {
     console.log('CheckoutPage mounted');

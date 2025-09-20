@@ -6,6 +6,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { RegionProvider } from './contexts/RegionContext';
 import { CartProvider } from './contexts/CartContext';
 import { CustomerProvider } from './contexts/CustomerContext';
+import { CheckoutProvider } from './contexts/CheckoutContext';
 import { API_CONFIG } from './utils/constants';
 
 const queryClient = new QueryClient();
@@ -22,7 +23,9 @@ root.render(
       <RegionProvider>
         <CartProvider>
           <CustomerProvider>
-            <App />
+            <CheckoutProvider>
+              <App />
+            </CheckoutProvider>
           </CustomerProvider>
         </CartProvider>
       </RegionProvider>
