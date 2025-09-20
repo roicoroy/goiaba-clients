@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { API_CONFIG } from '../utils/constants';
 
 interface Address {
@@ -13,7 +13,6 @@ interface Address {
     province?: string;
     postal_code: string;
     phone?: string;
-    // Medusa-specific fields
     address_name?: string;
     is_default_billing?: boolean;
     is_default_shipping?: boolean;
@@ -31,9 +30,8 @@ interface Customer {
     last_name: string;
     phone?: string;
     billing_address?: Address;
-    shipping_addresses?: Address[]; // All addresses for management
-    default_shipping_address?: Address; // The one with is_default_shipping: true
-    // Medusa API fields
+    shipping_addresses?: Address[];
+    default_shipping_address?: Address;
     addresses?: Address[];
     company_name?: string;
     has_account?: boolean;
@@ -53,7 +51,7 @@ interface CustomerContextType {
     setDefaultBillingAddress: (addressId: string) => Promise<void>;
     setDefaultShippingAddress: (addressId: string) => Promise<void>;
     fetchCustomer: () => Promise<void>;
-    refreshCustomerData: () => void;
+    clearCustomer: () => void;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -68,36 +66,20 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
     const [error, setError] = useState<string | null>(null);
 
     const fetchCustomer = useCallback(async () => {
+        const token = localStorage.getItem('authToken');
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+
+        console.log('🔍 fetchCustomer called:', { token: !!token, isAuthenticated });
+
+        if (!token || token === 'null' || token === 'undefined' || isAuthenticated !== 'true') {
+            console.log('❌ No valid authentication found');
+            setCustomer(null);
+            return;
+        }
+
         try {
             setIsLoading(true);
             setError(null);
-
-            const token = localStorage.getItem('authToken');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-            console.log('🔍 fetchCustomer called:', { token: !!token, isAuthenticated });
-
-            if (!token || token === 'null' || token === 'undefined' || isAuthenticated !== 'true') {
-                console.log('❌ No authentication found, using mock data');
-                // Use mock data if not authenticated
-                const savedCustomer = localStorage.getItem('mockCustomer');
-                if (savedCustomer) {
-                    setCustomer(JSON.parse(savedCustomer));
-                } else {
-                    const mockCustomer: Customer = {
-                        id: 'customer_mock_123',
-                        email: 'test02@test.com',
-                        first_name: 'John',
-                        last_name: 'Doe',
-                        phone: '+1234567890',
-                        billing_address: undefined,
-                        shipping_addresses: [],
-                    };
-                    setCustomer(mockCustomer);
-                    localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-                }
-                return;
-            }
 
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
@@ -107,7 +89,6 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
 
             console.log('🔑 Making authenticated request to /store/customers/me');
             console.log('🔑 Token preview:', token.substring(0, 20) + '...');
-            console.log('🔑 Full headers:', headers);
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
                 method: 'GET',
@@ -117,118 +98,43 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             console.log('📡 Response status:', response.status);
             console.log('📡 Response ok:', response.ok);
             
-            // Log response headers for debugging
-            console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-
             if (response.ok) {
                 const data = await response.json();
                 console.log('✅ Customer data from API:', data);
 
-                // Transform Medusa customer data to match our interface
                 const customer = data.customer;
                 const addresses = customer.addresses || [];
 
-                // Find billing and shipping addresses based on flags
-
-                // Find default billing and shipping addresses based on flags
                 const billingAddress = addresses.find((addr: Address) => addr.is_default_billing === true);
                 const defaultShippingAddress = addresses.find((addr: Address) => addr.is_default_shipping === true);
 
-                // All addresses for management (not filtered)
-                const allAddresses = addresses;
-
                 const transformedCustomer: Customer = {
                     ...customer,
-                    shipping_addresses: allAddresses, // All addresses for management
+                    shipping_addresses: addresses,
                     billing_address: billingAddress,
-                    // Add default shipping address as a separate field
                     default_shipping_address: defaultShippingAddress,
                 };
 
-                console.log('� Tranpsformed customer:', transformedCustomer);
-                console.log('💳 Billing address:', billingAddress);
-                console.log('🚚 Default shipping address:', defaultShippingAddress);
-                console.log('📦 All addresses:', allAddresses);
+                console.log('✅ Customer data loaded successfully');
                 setCustomer(transformedCustomer);
-                
-                // Clear mock data since we have real data
-                localStorage.removeItem('mockCustomer');
             } else if (response.status === 401) {
                 const errorText = await response.text();
-                console.log('❌ 401 Unauthorized - token may be invalid or expired');
+                console.log('❌ 401 Unauthorized - clearing invalid token');
                 console.log('❌ Error details:', errorText);
                 
-                // Clear invalid token
-                console.log('🧹 Clearing invalid authentication data');
+                // Clear invalid authentication
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('isAuthenticated');
-                
-                // Dispatch event to notify other components of auth failure
-                window.dispatchEvent(new CustomEvent('authStateChanged'));
-                
-                // Use mock data as fallback
-                console.log('🔄 Falling back to mock data');
-                const savedCustomer = localStorage.getItem('mockCustomer');
-                if (savedCustomer) {
-                    setCustomer(JSON.parse(savedCustomer));
-                } else {
-                    // Mock customer data for demonstration
-                    const mockCustomer: Customer = {
-                        id: 'customer_mock_123',
-                        email: 'test02@test.com',
-                        first_name: 'John',
-                        last_name: 'Doe',
-                        phone: '+1234567890',
-                        billing_address: undefined,
-                        shipping_addresses: [],
-                    };
-                    setCustomer(mockCustomer);
-                    localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-                }
+                setCustomer(null);
+                setError('Authentication expired. Please log in again.');
             } else {
                 const errorText = await response.text();
                 console.error('❌ API request failed:', response.status, errorText);
-                // Don't throw error, just use mock data
-                console.log('🔄 Using mock data due to API error');
-                const savedCustomer = localStorage.getItem('mockCustomer');
-                if (savedCustomer) {
-                    setCustomer(JSON.parse(savedCustomer));
-                } else {
-                    const mockCustomer: Customer = {
-                        id: 'customer_mock_123',
-                        email: 'test02@test.com',
-                        first_name: 'John',
-                        last_name: 'Doe',
-                        phone: '+1234567890',
-                        billing_address: undefined,
-                        shipping_addresses: [],
-                    };
-                    setCustomer(mockCustomer);
-                    localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-                }
+                setError(`Failed to load customer data: ${response.status}`);
             }
         } catch (err) {
             console.error('Failed to fetch customer:', err);
-            // Don't set error, just use mock data
-            console.log('🔄 Using mock data due to fetch error');
-
-            // Fallback to mock data on error
-            const savedCustomer = localStorage.getItem('mockCustomer');
-            if (savedCustomer) {
-                setCustomer(JSON.parse(savedCustomer));
-            } else {
-                const mockCustomer: Customer = {
-                    id: 'customer_mock_123',
-                    email: 'test02@test.com',
-                    first_name: 'John',
-                    last_name: 'Doe',
-                    phone: '+1234567890',
-                    billing_address: undefined,
-                    shipping_addresses: [],
-                };
-                setCustomer(mockCustomer);
-                localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-            }
+            setError('Failed to load customer data');
         } finally {
             setIsLoading(false);
         }
@@ -239,12 +145,10 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            console.log('🔄 Updating customer with data:', data);
-
             const token = localStorage.getItem('authToken');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
             
-            if (!token || !isAuthenticated) {
+            if (!token || isAuthenticated !== 'true') {
                 throw new Error('No authentication token found');
             }
 
@@ -253,10 +157,6 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
                 'Authorization': `Bearer ${token}`,
             };
-
-            console.log('📡 Making request to /store/customers/me');
-            console.log('📦 Request headers:', headers);
-            console.log('📦 Request body:', JSON.stringify(data));
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
                 method: 'POST',
@@ -269,17 +169,11 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 }),
             });
 
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response ok:', response.ok);
-
             if (response.ok) {
                 const responseData = await response.json();
-                console.log('✅ Customer updated, API response:', responseData);
-
                 const customer = responseData.customer;
                 const addresses = customer.addresses || [];
 
-                // Find billing and shipping addresses based on flags
                 const billingAddress = addresses.find((addr: Address) => addr.is_default_billing === true);
                 const defaultShippingAddress = addresses.find((addr: Address) => addr.is_default_shipping === true);
 
@@ -290,17 +184,15 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                     default_shipping_address: defaultShippingAddress,
                 };
 
-                console.log('🔄 Customer updated successfully:', transformedCustomer);
                 setCustomer(transformedCustomer);
             } else {
                 const errorText = await response.text();
-                console.error('❌ API request failed:', response.status, errorText);
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
         } catch (err) {
             console.error('Failed to update customer:', err);
             setError(err instanceof Error ? err.message : 'Failed to update customer');
-            throw err; // Re-throw to let the component handle the error
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -311,30 +203,22 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            console.log('📍 Adding shipping address:', address);
-
-            // Try to add via API first
             const token = localStorage.getItem('authToken');
-            console.log('🔑 Token available:', !!token);
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
 
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // For shipping addresses, ensure correct flags
             const shippingAddressData = {
                 ...address,
                 is_default_billing: false,
-                is_default_shipping: true, // You might want to make this configurable
+                is_default_shipping: true,
             };
-
-            console.log('📡 Making request to /store/customers/me/addresses');
-            console.log('📦 Request body:', JSON.stringify(shippingAddressData));
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses`, {
                 method: 'POST',
@@ -342,57 +226,17 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 body: JSON.stringify(shippingAddressData),
             });
 
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response ok:', response.ok);
-
             if (response.ok) {
-                const responseData = await response.json();
-                console.log('✅ Address added successfully!');
-                console.log('📋 Full API response:', responseData);
-
-                // Transform the response to match our interface
-                const customer = responseData.customer;
-                console.log('👤 Customer from response:', customer);
-                console.log('📍 Addresses in response:', customer.addresses);
-
-                const addresses = customer.addresses || [];
-
-                // Find billing and shipping addresses based on flags
-                const billingAddress = addresses.find((addr: Address) => addr.is_default_billing);
-                const shippingAddresses = addresses.filter((addr: Address) => !addr.is_default_billing);
-
-                const transformedCustomer: Customer = {
-                    ...customer,
-                    shipping_addresses: shippingAddresses,
-                    billing_address: billingAddress,
-                };
-
-                setCustomer(transformedCustomer);
-
-                // Also refresh customer data to ensure we have the latest
-                console.log('🔄 Refreshing customer data to ensure sync...');
-                setTimeout(() => fetchCustomer(), 500);
+                console.log('✅ Address added successfully');
+                await fetchCustomer();
             } else {
                 const errorText = await response.text();
-                console.error('❌ API request failed:', response.status, errorText);
-                console.log('🔄 Falling back to refresh customer data...');
-
-                // Even if the add failed, refresh to see current state
-                setTimeout(() => fetchCustomer(), 500);
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
         } catch (err) {
             console.error('Failed to add shipping address:', err);
             setError('Failed to add shipping address');
-
-            // Fallback to local storage
-            const newAddress = { ...address, id: `addr_${Date.now()}` };
-            const updatedCustomer = {
-                ...customer!,
-                shipping_addresses: [...(customer?.shipping_addresses || []), newAddress]
-            };
-            setCustomer(updatedCustomer);
-            localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -403,22 +247,33 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
 
-            const updatedAddresses = customer?.shipping_addresses?.map(addr =>
-                addr.id === addressId ? { ...addr, ...address } : addr
-            ) || [];
-
-            const updatedCustomer = {
-                ...customer!,
-                shipping_addresses: updatedAddresses
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
-            setCustomer(updatedCustomer);
-            localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses/${addressId}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(address),
+            });
+
+            if (response.ok) {
+                await fetchCustomer();
+            } else {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
         } catch (err) {
             console.error('Failed to update shipping address:', err);
             setError('Failed to update shipping address');
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -429,19 +284,32 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 300));
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
 
-            const updatedAddresses = customer?.shipping_addresses?.filter(addr => addr.id !== addressId) || [];
-            const updatedCustomer = {
-                ...customer!,
-                shipping_addresses: updatedAddresses
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
-            setCustomer(updatedCustomer);
-            localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses/${addressId}`, {
+                method: 'DELETE',
+                headers,
+            });
+
+            if (response.ok) {
+                await fetchCustomer();
+            } else {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
         } catch (err) {
             console.error('Failed to delete shipping address:', err);
             setError('Failed to delete shipping address');
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -452,24 +320,9 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            console.log('💳 Adding billing address:', address);
-
-            // Try to add via API first
             const token = localStorage.getItem('authToken');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            
-            console.log('🔑 Auth state:', { token: !!token, isAuthenticated });
-            
-            if (!token || !isAuthenticated) {
-                console.log('❌ No authentication, using mock data');
-                // Fallback to local storage
-                const updatedCustomer = {
-                    ...customer!,
-                    billing_address: { ...address, id: `billing_${Date.now()}` }
-                };
-                setCustomer(updatedCustomer);
-                localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
-                return;
+            if (!token) {
+                throw new Error('No authentication token found');
             }
 
             const headers: Record<string, string> = {
@@ -478,15 +331,11 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 'Authorization': `Bearer ${token}`,
             };
 
-            // In Medusa, billing address needs the is_default_billing flag
             const billingAddressData = {
                 ...address,
                 is_default_billing: true,
                 is_default_shipping: false,
             };
-
-            console.log('📡 Making request to /store/customers/me/addresses for billing');
-            console.log('📦 Request body:', JSON.stringify(billingAddressData));
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses`, {
                 method: 'POST',
@@ -494,58 +343,16 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 body: JSON.stringify(billingAddressData),
             });
 
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response ok:', response.ok);
-
             if (response.ok) {
-                const responseData = await response.json();
-                console.log('✅ Billing address added successfully!');
-                console.log('📋 Full API response:', responseData);
-
-                // Transform the response to match our interface
-                const customer = responseData.customer;
-                console.log('👤 Customer from response:', customer);
-                console.log('📍 Addresses in response:', customer.addresses);
-
-                const addresses = customer.addresses || [];
-
-                // Find billing and shipping addresses based on flags
-                const billingAddress = addresses.find((addr: Address) => addr.is_default_billing);
-                const shippingAddresses = addresses.filter((addr: Address) => !addr.is_default_billing);
-
-                const transformedCustomer: Customer = {
-                    ...customer,
-                    shipping_addresses: shippingAddresses,
-                    billing_address: billingAddress,
-                };
-
-                console.log('🔄 Transformed customer with billing:', transformedCustomer);
-                console.log('💳 New billing address:', billingAddress);
-                setCustomer(transformedCustomer);
-
-                // Also refresh customer data to ensure we have the latest
-                console.log('🔄 Refreshing customer data to ensure sync...');
-                setTimeout(() => fetchCustomer(), 500);
+                await fetchCustomer();
             } else {
                 const errorText = await response.text();
-                console.error('❌ API request failed:', response.status, errorText);
-                console.log('🔄 Falling back to refresh customer data...');
-
-                // Even if the add failed, refresh to see current state
-                setTimeout(() => fetchCustomer(), 500);
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
         } catch (err) {
             console.error('Failed to update billing address:', err);
             setError('Failed to update billing address');
-
-            // Fallback to local storage
-            const updatedCustomer = {
-                ...customer!,
-                billing_address: { ...address, id: `billing_${Date.now()}` }
-            };
-            setCustomer(updatedCustomer);
-            localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -557,24 +364,21 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setError(null);
 
             const token = localStorage.getItem('authToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Find the address to update
             const addressToUpdate = customer?.shipping_addresses?.find(addr => addr.id === addressId);
             if (!addressToUpdate) {
                 throw new Error('Address not found');
             }
 
-            console.log('💳 Setting default billing address:', addressId);
-
-            // Clean the address data - remove null values and only send required fields
             const cleanAddressData = {
                 first_name: addressToUpdate.first_name,
                 last_name: addressToUpdate.last_name,
@@ -583,14 +387,11 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 country_code: addressToUpdate.country_code,
                 postal_code: addressToUpdate.postal_code,
                 is_default_billing: true,
-                // Only include optional fields if they have actual values
                 ...(addressToUpdate.company && { company: addressToUpdate.company }),
                 ...(addressToUpdate.address_2 && { address_2: addressToUpdate.address_2 }),
                 ...(addressToUpdate.province && { province: addressToUpdate.province }),
                 ...(addressToUpdate.phone && { phone: addressToUpdate.phone }),
             };
-
-            console.log('📦 Sending clean address data:', cleanAddressData);
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses/${addressId}`, {
                 method: 'POST',
@@ -599,8 +400,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             });
 
             if (response.ok) {
-                console.log('✅ Default billing address updated');
-                await fetchCustomer(); // Refresh customer data
+                await fetchCustomer();
             } else {
                 const errorText = await response.text();
                 throw new Error(`Failed to set default billing: ${response.status} ${errorText}`);
@@ -608,6 +408,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         } catch (err) {
             console.error('Failed to set default billing address:', err);
             setError('Failed to set default billing address');
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -619,24 +420,21 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setError(null);
 
             const token = localStorage.getItem('authToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            // Find the address to update
             const addressToUpdate = customer?.shipping_addresses?.find(addr => addr.id === addressId);
             if (!addressToUpdate) {
                 throw new Error('Address not found');
             }
 
-            console.log('🚚 Setting default shipping address:', addressId);
-
-            // Clean the address data - remove null values and only send required fields
             const cleanAddressData = {
                 first_name: addressToUpdate.first_name,
                 last_name: addressToUpdate.last_name,
@@ -645,14 +443,11 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 country_code: addressToUpdate.country_code,
                 postal_code: addressToUpdate.postal_code,
                 is_default_shipping: true,
-                // Only include optional fields if they have actual values
                 ...(addressToUpdate.company && { company: addressToUpdate.company }),
                 ...(addressToUpdate.address_2 && { address_2: addressToUpdate.address_2 }),
                 ...(addressToUpdate.province && { province: addressToUpdate.province }),
                 ...(addressToUpdate.phone && { phone: addressToUpdate.phone }),
             };
-
-            console.log('📦 Sending clean address data:', cleanAddressData);
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me/addresses/${addressId}`, {
                 method: 'POST',
@@ -661,8 +456,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             });
 
             if (response.ok) {
-                console.log('✅ Default shipping address updated');
-                await fetchCustomer(); // Refresh customer data
+                await fetchCustomer();
             } else {
                 const errorText = await response.text();
                 throw new Error(`Failed to set default shipping: ${response.status} ${errorText}`);
@@ -670,84 +464,15 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         } catch (err) {
             console.error('Failed to set default shipping address:', err);
             setError('Failed to set default shipping address');
+            throw err;
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Initialize with mock data on mount
-    useEffect(() => {
-        console.log('🔄 CustomerContext initializing...');
-        // Always start with mock data - only fetch real data when explicitly requested
-        const savedCustomer = localStorage.getItem('mockCustomer');
-        if (savedCustomer) {
-            console.log('📦 Loading saved mock customer');
-            setCustomer(JSON.parse(savedCustomer));
-        } else {
-            console.log('🆕 Creating new mock customer');
-            const mockCustomer: Customer = {
-                id: 'customer_mock_123',
-                email: 'test02@test.com',
-                first_name: 'John',
-                last_name: 'Doe',
-                phone: '+1234567890',
-                billing_address: undefined,
-                shipping_addresses: [],
-            };
-            setCustomer(mockCustomer);
-            localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-        }
-    }, []);
-
-    // Listen for authentication state changes
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            const token = localStorage.getItem('authToken');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-            console.log('📦 Storage change detected:', { 
-                key: e.key,
-                token: !!token, 
-                isAuthenticated, 
-                customerId: customer?.id 
-            });
-
-            if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true' && customer?.id?.startsWith('customer_mock')) {
-                // User has token but still showing mock data - fetch real data
-                console.log('🔄 Fetching real customer data after storage change');
-                fetchCustomer();
-            }
-        };
-
-        // Listen for storage changes from other tabs
-        window.addEventListener('storage', handleStorageChange);
-
-        // Also listen for custom events within the same tab
-        const handleAuthChange = () => {
-            const token = localStorage.getItem('authToken');
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-            console.log('🔔 Auth change event - not auto-fetching customer data');
-            // Don't automatically fetch customer data - let components request it when needed
-        };
-
-        window.addEventListener('authStateChanged', handleAuthChange);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('authStateChanged', handleAuthChange);
-        };
-    }, [customer?.id]); // Remove fetchCustomer dependency
-
-    const refreshCustomerData = () => {
-        const token = localStorage.getItem('authToken');
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-        if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true') {
-            console.log('🔄 Manually refreshing customer data');
-            fetchCustomer();
-        } else {
-            console.log('❌ Cannot refresh: no valid authentication');
-        }
+    const clearCustomer = () => {
+        setCustomer(null);
+        setError(null);
     };
 
     const value: CustomerContextType = {
@@ -762,7 +487,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         setDefaultBillingAddress,
         setDefaultShippingAddress,
         fetchCustomer,
-        refreshCustomerData,
+        clearCustomer,
     };
 
     return (

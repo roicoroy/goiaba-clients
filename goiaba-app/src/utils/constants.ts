@@ -9,7 +9,6 @@ export const STORAGE_KEYS = {
   IS_AUTHENTICATED: 'isAuthenticated',
   SELECTED_REGION_ID: 'selectedRegionId',
   CART_ID: 'cartId',
-  MOCK_CUSTOMER: 'mockCustomer',
 } as const;
 
 export const ROUTES = {

@@ -58,20 +58,10 @@ const LoginPage: React.FC = () => {
       localStorage.removeItem("mockCustomer");
       
       console.log('💾 Authentication stored successfully');
-      console.log('📦 localStorage contents:', {
-        authToken: !!localStorage.getItem("authToken"),
-        isAuthenticated: localStorage.getItem("isAuthenticated")
-      });
       
       setToastMessage('Login successful! Welcome back!');
       setToastColor('success');
       setShowToast(true);
-      
-      // Dispatch custom event to notify other components after a delay
-      setTimeout(() => {
-        console.log('📢 Dispatching authStateChanged event');
-        window.dispatchEvent(new CustomEvent('authStateChanged'));
-      }, 100); // Just notify, don't auto-fetch customer data
       
       // Navigate to main app after a short delay to show success message
       setTimeout(() => {

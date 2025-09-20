@@ -53,7 +53,6 @@ const Tab2: React.FC = () => {
     deleteShippingAddress,
     updateBillingAddress,
     setDefaultShippingAddress,
-    fetchCustomer,
   } = useCustomerContext();
 
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -63,18 +62,18 @@ const Tab2: React.FC = () => {
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
   const [showCustomerEditForm, setShowCustomerEditForm] = useState(false);
 
-  // Fetch customer data when this tab is accessed
+  // Fetch customer data when this tab is accessed (only if authenticated)
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const isAuthenticated = localStorage.getItem('isAuthenticated');
     
-    if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true') {
+    if (token && token !== 'null' && token !== 'undefined' && isAuthenticated === 'true') {
       console.log('👤 Profile tab accessed - fetching real customer data');
       fetchCustomer();
     } else {
-      console.log('👤 Profile tab accessed - using mock data (not authenticated)');
+      console.log('👤 Profile tab accessed - not authenticated, showing login prompt');
     }
-  }, []); // Only run once when component mounts
+  }, [fetchCustomer]);
 
   const handleAddAddress = (type: 'shipping' | 'billing') => {
     setAddressType(type);
@@ -139,6 +138,47 @@ const Tab2: React.FC = () => {
     return parts.join(', ');
   };
 
+  // Show login prompt if not authenticated
+  const token = localStorage.getItem('authToken');
+  const isAuthenticated = localStorage.getItem('isAuthenticated');
+  
+  if (!token || token === 'null' || token === 'undefined' || isAuthenticated !== 'true') {
+    return (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Profile</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          <IonCard>
+            <IonCardContent style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+              <IonIcon
+                icon={person}
+                style={{ 
+                  fontSize: '4rem', 
+                  color: 'var(--ion-color-medium)',
+                  marginBottom: '1rem'
+                }}
+              />
+              <IonText>
+                <h2>Please Log In</h2>
+                <p>You need to be logged in to view your profile and manage addresses.</p>
+              </IonText>
+              <IonButton
+                expand="block"
+                routerLink="/login"
+                style={{ marginTop: '1.5rem' }}
+              >
+                Go to Login
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
   if (isLoading && !customer) {
     return (
       <IonPage>
@@ -150,6 +190,7 @@ const Tab2: React.FC = () => {
         <IonContent>
           <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
             <IonSpinner />
+            <IonText style={{ marginLeft: '1rem' }}>Loading profile...</IonText>
           </div>
         </IonContent>
       </IonPage>
@@ -225,6 +266,24 @@ const Tab2: React.FC = () => {
           <IonItem color="danger">
             <IonLabel>{error}</IonLabel>
           </IonItem>
+        )}
+
+        {!customer && !isLoading && (
+          <IonCard>
+            <IonCardContent style={{ textAlign: 'center', padding: '2rem' }}>
+              <IonText color="medium">
+                <p>No customer data available. Please try refreshing or log in again.</p>
+              </IonText>
+              <IonButton
+                expand="block"
+                fill="outline"
+                onClick={() => fetchCustomer()}
+                style={{ marginTop: '1rem' }}
+              >
+                Retry
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
         )}
 
         {/* Customer Info */}
