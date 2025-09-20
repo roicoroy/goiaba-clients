@@ -216,9 +216,12 @@ const ProductDetailsPage: React.FC = () => {
                                 <IonText>
                                     <p>{product.description}</p>
                                 </IonText>
+                                </>
                             )}
 
                             {product.variants && product.variants.length > 0 && (
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering variants, count:', product.variants.length)}
                                 <div className="variants-section">
                                     <IonText>
                                         <h3>Variants</h3>
@@ -230,18 +233,14 @@ const ProductDetailsPage: React.FC = () => {
                                                 <IonLabel>
                                                     <h3>{variant.title}</h3>
                                                     {price && (
-                                </>
                                                         <p>
                                                             {new Intl.NumberFormat(undefined, {
                                                                 style: "currency",
-                                <>
-                                    {console.log('🔍 ProductDetailsPage: Rendering variants, count:', product.variants.length)}
                                                                 currency: price.currency_code,
                                                             }).format(price.calculated_amount)}
                                                         </p>
                                                     )}
                                                     {!price && selectedRegion && (
-                                            console.log(`🔍 ProductDetailsPage: Rendering variant ${index}:`, variant.id, variant.title);
                                                         <p>Price not available for {selectedRegion.name}</p>
                                                     )}
                                                 </IonLabel>
@@ -249,9 +248,12 @@ const ProductDetailsPage: React.FC = () => {
                                         );
                                     })}
                                 </div>
+                                </>
                             )}
 
                             {product.tags && product.tags.length > 0 && (
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering tags, count:', product.tags.length)}
                                 <div className="tags-section">
                                     <IonText>
                                         <h3>Tags</h3>
@@ -263,20 +265,19 @@ const ProductDetailsPage: React.FC = () => {
                                             </IonChip>
                                         ))}
                                     </div>
-                                </>
                                 </div>
+                                </>
                             )}
 
                             {product.variants && product.variants.length > 0 && (
                                 <>
-                                    {console.log('🔍 ProductDetailsPage: Rendering tags, count:', product.tags.length)}
+                                    {console.log('🔍 ProductDetailsPage: Rendering AddToCart component')}
                                 <div className="add-to-cart-section">
                                     <IonText>
                                         <h3>Add to Cart</h3>
                                     </IonText>
                                     <AddToCart variants={product.variants} />
                                 </div>
-                                </>
                                 </>
                             )}
                         </IonCardContent>
@@ -296,5 +297,3 @@ const ProductDetailsPage: React.FC = () => {
 };
 
 export default ProductDetailsPage;
-                                <>
-                                    {console.log('🔍 ProductDetailsPage: Rendering AddToCart component')}
