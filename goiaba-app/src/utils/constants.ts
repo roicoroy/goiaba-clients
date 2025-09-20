@@ -1,6 +1,6 @@
 export const API_CONFIG = {
   BASE_URL: 'http://localhost:9000',
-  PUBLISHABLE_KEY: 'pk_3674d9928e02a60db06eba508b8b7dd7a3d70c9cee8b6ab7c4f5fdcdddc1478f',
+  PUBLISHABLE_KEY: 'pk_edc04a825a6de55a445591da014137039c2affad5b75340ee3cfa960db5dd28c',
 } as const;
 
 export const STORAGE_KEYS = {
