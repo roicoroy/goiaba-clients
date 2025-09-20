@@ -109,6 +109,9 @@ export class AuthService {
       const data: LoginResponse = await response.json();
       console.log('✅ Login successful');
 
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+
       return data;
     } catch (error) {
       console.error('💥 Login process failed:', error);

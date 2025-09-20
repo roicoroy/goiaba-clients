@@ -113,6 +113,12 @@ const RegisterPage: React.FC = () => {
       localStorage.setItem('authToken', token);
       localStorage.setItem('isAuthenticated', 'true');
       
+      // Clear any existing mock data since we now have real auth
+      localStorage.removeItem('mockCustomer');
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+      
       console.log('✅ Registration completed successfully');
       console.log('👤 Customer created:', customer);
 

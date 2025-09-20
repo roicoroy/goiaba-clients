@@ -35,69 +35,36 @@ const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/customer/emailpass`, {
-        method: "POST",
-        credentials: "include", // Important: include cookies for session management
-        headers: {
-          "Content-Type": "application/json",
-          "x-publishable-api-key": API_CONFIG.PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ email, password }),
+      // Use the AuthService for consistent authentication
+      const { token } = await AuthService.login({ email, password });
+      
+      console.log('🔑 Login successful, token received:', !!token);
+      
+      // Store authentication data
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("isAuthenticated", "true");
+      
+      // Clear any existing mock data since we now have real auth
+      localStorage.removeItem("mockCustomer");
+      
+      console.log('💾 Authentication stored successfully');
+      console.log('📦 localStorage contents:', {
+        authToken: !!localStorage.getItem("authToken"),
+        isAuthenticated: localStorage.getItem("isAuthenticated")
       });
-
-      const data = await response.json();
-      console.log('🔐 Login response:', data);
-      console.log('🔑 Token in response:', data.token);
-
-      if (response.ok) {
-        // Verify the token works by testing it
-        if (data.token) {
-          const testResponse = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
-              'Authorization': `Bearer ${data.token}`,
-            },
-          });
-          
-          console.log('🧪 Token test response:', testResponse.status);
-          
-          if (!testResponse.ok) {
-            console.warn('⚠️ Token validation failed but proceeding');
-          }
-        }
-        
-        // Store the JWT token for API calls
-        if (data.token) {
-          console.log('💾 Storing token:', data.token);
-          localStorage.setItem("authToken", data.token);
-          
-          // Verify it was stored
-          const storedToken = localStorage.getItem("authToken");
-          console.log('✅ Token stored successfully:', !!storedToken);
-        } else {
-          console.log('❌ No token in response');
-        }
-        localStorage.setItem("isAuthenticated", "true");
-        
-        // Log what's in localStorage
-        console.log('📦 localStorage contents:', {
-          authToken: localStorage.getItem("authToken"),
-          isAuthenticated: localStorage.getItem("isAuthenticated")
-        });
-        
-        // Navigate to main app - CustomerContext will automatically refresh data
+      
+      setToastMessage('Login successful! Welcome back!');
+      setToastColor('success');
+      setShowToast(true);
+      
+      // Navigate to main app after a short delay to show success message
+      setTimeout(() => {
         history.push("/tabs/tab1");
-      } else {
-        console.error("Login failed with status:", response.status);
-        setToastMessage('Login failed. Please check your credentials.');
-        setToastColor('danger');
-        setShowToast(true);
-      }
+      }, 1000);
+      
     } catch (error) {
       console.error("Login error:", error);
-      setToastMessage('An error occurred during login. Please try again.');
+      setToastMessage(error instanceof Error ? error.message : 'Login failed. Please try again.');
       setToastColor('danger');
       setShowToast(true);
     } finally {

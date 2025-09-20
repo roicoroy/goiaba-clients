@@ -664,13 +664,21 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         const token = localStorage.getItem('authToken');
         const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-        console.log('🔄 CustomerContext useEffect - checking auth state:', { token: !!token, isAuthenticated });
+        console.log('🔄 CustomerContext useEffect - checking auth state:', { 
+            token: !!token, 
+            isAuthenticated,
+            tokenLength: token?.length || 0
+        });
 
-        if (token && isAuthenticated === 'true') {
+        if (token && token.length > 0 && isAuthenticated === 'true') {
             console.log('✅ Valid authentication found, fetching customer');
             fetchCustomer();
         } else {
-            console.log('❌ No valid authentication, using mock data');
+            console.log('❌ No valid authentication, using mock data', {
+                hasToken: !!token,
+                tokenValid: token && token.length > 0,
+                isAuthenticatedValue: isAuthenticated
+            });
             // Load mock data if not authenticated
             const savedCustomer = localStorage.getItem('mockCustomer');
             if (savedCustomer) {
@@ -694,39 +702,49 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         }
     }, [fetchCustomer]);
 
-    // Listen for storage changes (when user logs in from another tab or after login)
+    // Listen for authentication state changes
     useEffect(() => {
-        const handleStorageChange = () => {
+        const handleStorageChange = (e: StorageEvent) => {
             const token = localStorage.getItem('authToken');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-            console.log('📦 Storage change detected:', { token: !!token, isAuthenticated, customerId: customer?.id });
+            console.log('📦 Storage change detected:', { 
+                key: e.key,
+                token: !!token, 
+                isAuthenticated, 
+                customerId: customer?.id 
+            });
 
-            if (token && isAuthenticated === 'true' && customer?.id === 'customer_mock_123') {
+            if (token && token.length > 0 && isAuthenticated === 'true' && customer?.id?.startsWith('customer_mock')) {
                 // User has token but still showing mock data - fetch real data
                 console.log('🔄 Fetching real customer data after storage change');
                 fetchCustomer();
             }
         };
 
+        // Listen for storage changes from other tabs
         window.addEventListener('storage', handleStorageChange);
 
-        // Check once after a delay for login state changes (instead of periodic checks)
-        const timeoutId = setTimeout(() => {
+        // Also listen for custom events within the same tab
+        const handleAuthChange = () => {
             const token = localStorage.getItem('authToken');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-            if (token && isAuthenticated === 'true' && customer?.id === 'customer_mock_123') {
-                console.log('⏰ Delayed check: User logged in, fetching real data');
+            console.log('🔔 Auth change event:', { token: !!token, isAuthenticated });
+
+            if (token && token.length > 0 && isAuthenticated === 'true') {
+                console.log('🔄 Auth change detected, fetching customer data');
                 fetchCustomer();
             }
-        }, 1000); // Check once after 1 second
+        };
+
+        window.addEventListener('authStateChanged', handleAuthChange);
 
         return () => {
             window.removeEventListener('storage', handleStorageChange);
-            clearTimeout(timeoutId);
+            window.removeEventListener('authStateChanged', handleAuthChange);
         };
-    }, [fetchCustomer, customer]);
+    }, [fetchCustomer, customer?.id]);
 
     const refreshCustomerData = () => {
         const token = localStorage.getItem('authToken');
