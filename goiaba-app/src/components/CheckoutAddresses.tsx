@@ -26,26 +26,39 @@ interface CheckoutAddressesProps {
 }
 
 const CheckoutAddresses: React.FC<CheckoutAddressesProps> = ({ onNext }) => {
+  console.log('🏠 CheckoutAddresses: Component render START');
+  
   const { cart } = useCartContext();
+  console.log('🏠 CheckoutAddresses: Cart context loaded');
+  
   const { customer } = useCustomerContext();
+  console.log('🏠 CheckoutAddresses: Customer context loaded');
+  
   const { client } = useMedusa();
+  console.log('🏠 CheckoutAddresses: Medusa client loaded');
   
   const [selectedShippingAddress, setSelectedShippingAddress] = useState<string>('');
   const [selectedBillingAddress, setSelectedBillingAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  console.log('🏠 CheckoutAddresses: State initialized');
 
   useEffect(() => {
+    console.log('🏠 CheckoutAddresses: useEffect START');
     // Pre-select default addresses
     if (customer?.default_shipping_address?.id) {
+      console.log('🏠 CheckoutAddresses: Setting default shipping address');
       setSelectedShippingAddress(customer.default_shipping_address.id);
     }
     if (customer?.billing_address?.id) {
+      console.log('🏠 CheckoutAddresses: Setting default billing address');
       setSelectedBillingAddress(customer.billing_address.id);
     }
+    console.log('🏠 CheckoutAddresses: useEffect END');
   }, [customer]);
 
   const handleUpdateCartAddresses = async () => {
+    console.log('🏠 CheckoutAddresses: handleUpdateCartAddresses START');
     if (!cart?.id || !selectedShippingAddress) return;
     
     try {
