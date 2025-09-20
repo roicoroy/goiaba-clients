@@ -35,14 +35,24 @@ import './CheckoutPage.css';
 
 
 const CheckoutPage: React.FC = () => {
+  console.log('🚀 CheckoutPage: Component function called');
+  
   const history = useHistory();
+  console.log('🔍 CheckoutPage: History hook initialized');
+  
   const { cart } = useCartContext();
+  console.log('🔍 CheckoutPage: Cart context:', { hasCart: !!cart, cartId: cart?.id });
+  
   const { customer } = useCustomerContext();
+  console.log('🔍 CheckoutPage: Customer context:', { hasCustomer: !!customer, customerId: customer?.id });
+  
   const { currentStep, setCurrentStep, completedOrder } = useCheckoutContext();
+  console.log('🔍 CheckoutPage: Checkout context:', { currentStep, hasCompletedOrder: !!completedOrder });
   
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastColor, setToastColor] = useState<'success' | 'danger'>('success');
+  console.log('🔍 CheckoutPage: State initialized');
 
   const steps = [
     { title: 'Addresses', icon: location, component: CheckoutAddresses },
@@ -50,15 +60,19 @@ const CheckoutPage: React.FC = () => {
     { title: 'Payment', icon: card, component: CheckoutPayment },
     { title: 'Review', icon: checkmarkCircle, component: CheckoutReview },
   ];
+  console.log('🔍 CheckoutPage: Steps defined');
 
   // Handle order completion navigation
   useEffect(() => {
+    console.log('🔍 CheckoutPage: Order completion useEffect triggered', { hasCompletedOrder: !!completedOrder });
     if (completedOrder) {
+      console.log('🔍 CheckoutPage: Navigating to order confirmation');
       history.push(`/tabs/order-confirmation/${completedOrder.id}`);
     }
   }, [completedOrder, history]);
 
   useEffect(() => {
+    console.log('🔍 CheckoutPage: Main useEffect triggered');
     console.log('CheckoutPage mounted');
     console.log('Cart:', cart);
     console.log('Customer:', customer);
@@ -68,27 +82,35 @@ const CheckoutPage: React.FC = () => {
       // For now, let's not redirect to allow testing
       // history.push('/tabs/tab1');
     }
+    console.log('🔍 CheckoutPage: Main useEffect completed');
   }, [cart, customer, history]);
 
   const handleNextStep = () => {
+    console.log('🔍 CheckoutPage: handleNextStep called', { currentStep, maxStep: steps.length - 1 });
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePreviousStep = () => {
+    console.log('🔍 CheckoutPage: handlePreviousStep called', { currentStep });
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
   const getCurrentStepComponent = () => {
+    console.log('🔍 CheckoutPage: getCurrentStepComponent called', { currentStep, stepTitle: steps[currentStep]?.title });
     const StepComponent = steps[currentStep].component;
+    console.log('🔍 CheckoutPage: About to render step component:', steps[currentStep]?.title);
     return <StepComponent onNext={handleNextStep} onPrevious={handlePreviousStep} />;
   };
 
+  console.log('🔍 CheckoutPage: About to check loading conditions');
+  
   // Show loading if contexts are not ready
   if (!cart && !customer) {
+    console.log('🔍 CheckoutPage: Rendering loading state - no cart and no customer');
     return (
       <IonPage>
         <IonHeader>
@@ -110,6 +132,7 @@ const CheckoutPage: React.FC = () => {
   }
 
   if (!cart) {
+    console.log('🔍 CheckoutPage: Rendering no cart state');
     return (
       <IonPage>
         <IonHeader>
@@ -132,8 +155,11 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  console.log('🔍 CheckoutPage: About to render main checkout page');
+  
   return (
     <IonPage>
+      {console.log('🔍 CheckoutPage: Starting main JSX render')}
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
@@ -144,11 +170,13 @@ const CheckoutPage: React.FC = () => {
       </IonHeader>
       
       <IonContent>
+        {console.log('🔍 CheckoutPage: Rendering IonContent')}
         {/* Progress Bar */}
         <IonProgressBar 
           value={(currentStep + 1) / steps.length} 
           color="primary"
         />
+        {console.log('🔍 CheckoutPage: Progress bar rendered')}
         
         {/* Step Indicator */}
         <IonCard className="step-indicator">
@@ -170,6 +198,7 @@ const CheckoutPage: React.FC = () => {
             </div>
           </IonCardContent>
         </IonCard>
+        {console.log('🔍 CheckoutPage: Step indicator rendered')}
 
         {/* Order Summary */}
         <IonCard>
@@ -196,9 +225,12 @@ const CheckoutPage: React.FC = () => {
             </IonItem>
           </IonCardContent>
         </IonCard>
+        {console.log('🔍 CheckoutPage: Order summary rendered')}
 
         {/* Current Step Component */}
+        {console.log('🔍 CheckoutPage: About to render current step component')}
         {getCurrentStepComponent()}
+        {console.log('🔍 CheckoutPage: Current step component rendered')}
 
         <IonToast
           isOpen={showToast}
@@ -207,7 +239,9 @@ const CheckoutPage: React.FC = () => {
           duration={3000}
           color={toastColor}
         />
+        {console.log('🔍 CheckoutPage: Toast rendered')}
       </IonContent>
+      {console.log('🔍 CheckoutPage: Component render complete')}
     </IonPage>
   );
 };
