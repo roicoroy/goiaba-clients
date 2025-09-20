@@ -9,7 +9,14 @@ import { CustomerProvider } from './contexts/CustomerContext';
 import { CheckoutProvider } from './contexts/CheckoutContext';
 import { API_CONFIG } from './utils/constants';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
@@ -19,6 +26,7 @@ root.render(
       queryClientProviderProps={{ client: queryClient }}
       baseUrl={API_CONFIG.BASE_URL}
       publishableApiKey={API_CONFIG.PUBLISHABLE_KEY}
+      maxRetries={1}
     >
       <RegionProvider>
         <CartProvider>
