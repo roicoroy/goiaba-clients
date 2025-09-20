@@ -21,6 +21,7 @@ import {
   IonToast,
 } from '@ionic/react';
 import { checkmarkCircle, card, location, truck } from 'ionicons/icons';
+import { car } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useCartContext } from '../contexts/CartContext';
 import { useCustomerContext } from '../contexts/CustomerContext';
@@ -45,7 +46,7 @@ const CheckoutPage: React.FC = () => {
 
   const steps = [
     { title: 'Addresses', icon: location, component: CheckoutAddresses },
-    { title: 'Shipping', icon: truck, component: CheckoutShipping },
+    { title: 'Shipping', icon: car, component: CheckoutShipping },
     { title: 'Payment', icon: card, component: CheckoutPayment },
     { title: 'Review', icon: checkmarkCircle, component: CheckoutReview },
   ];

@@ -12,7 +12,7 @@ import {
   IonList,
   IonSpinner,
 } from '@ionic/react';
-import { checkmarkCircle, location, truck, card } from 'ionicons/icons';
+import { checkmarkCircle, location, car, card } from 'ionicons/icons';
 import { useCartContext } from '../contexts/CartContext';
 import { useCheckoutContext } from '../contexts/CheckoutContext';
 import { formatPrice, formatAddress } from '../utils/formatters';

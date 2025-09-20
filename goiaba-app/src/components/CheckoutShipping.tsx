@@ -14,7 +14,7 @@ import {
   IonList,
   IonSpinner,
 } from '@ionic/react';
-import { truck } from 'ionicons/icons';
+import { car } from 'ionicons/icons';
 import { useCartContext } from '../contexts/CartContext';
 import { useCheckoutContext } from '../contexts/CheckoutContext';
 import { useMedusa } from 'medusa-react';
@@ -69,7 +69,7 @@ const CheckoutShipping: React.FC<CheckoutShippingProps> = ({ onNext, onPrevious 
       <IonCard>
         <IonCardHeader>
           <IonCardTitle>
-            <IonIcon icon={truck} style={{ marginRight: '8px' }} />
+            <IonIcon icon={car} style={{ marginRight: '8px' }} />
             Shipping Method
           </IonCardTitle>
         </IonCardHeader>
