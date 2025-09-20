@@ -46,6 +46,16 @@ export class AuthService {
       const { token }: RegisterResponse = await registerResponse.json();
       console.log('✅ Registration successful, token received');
 
+      // Verify the token is valid by testing it
+      const testResponse = await fetch(`${this.baseUrl}/store/customers/me`, {
+        method: 'GET',
+        headers: this.getHeaders(true, token),
+      });
+      
+      if (!testResponse.ok) {
+        console.warn('⚠️ Token validation failed, but continuing with customer creation');
+      }
+
       // Step 2: Create the customer profile
       const customerPayload: CreateCustomerPayload = {
         email: payload.email,

@@ -50,6 +50,24 @@ const LoginPage: React.FC = () => {
       console.log('🔑 Token in response:', data.token);
 
       if (response.ok) {
+        // Verify the token works by testing it
+        if (data.token) {
+          const testResponse = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+              'Authorization': `Bearer ${data.token}`,
+            },
+          });
+          
+          console.log('🧪 Token test response:', testResponse.status);
+          
+          if (!testResponse.ok) {
+            console.warn('⚠️ Token validation failed but proceeding');
+          }
+        }
+        
         // Store the JWT token for API calls
         if (data.token) {
           console.log('💾 Storing token:', data.token);

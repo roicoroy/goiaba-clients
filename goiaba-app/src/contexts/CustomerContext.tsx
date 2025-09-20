@@ -72,29 +72,48 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             setIsLoading(true);
             setError(null);
 
-            // Try to fetch real customer data from Medusa API
             const token = localStorage.getItem('authToken');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
 
             console.log('🔍 fetchCustomer called:', { token: !!token, isAuthenticated });
 
+            if (!token || !isAuthenticated) {
+                console.log('❌ No authentication found, using mock data');
+                // Use mock data if not authenticated
+                const savedCustomer = localStorage.getItem('mockCustomer');
+                if (savedCustomer) {
+                    setCustomer(JSON.parse(savedCustomer));
+                } else {
+                    const mockCustomer: Customer = {
+                        id: 'customer_mock_123',
+                        email: 'test02@test.com',
+                        first_name: 'John',
+                        last_name: 'Doe',
+                        phone: '+1234567890',
+                        billing_address: undefined,
+                        shipping_addresses: [],
+                    };
+                    setCustomer(mockCustomer);
+                    localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
+                }
+                return;
+            }
+
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-                console.log('🔑 Making authenticated request to /store/customers/me');
-            } else {
-                console.log('❌ No token found, skipping API call');
-                throw new Error('No authentication token');
-            }
+            console.log('🔑 Making authenticated request to /store/customers/me');
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
                 method: 'GET',
                 headers,
             });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
 
             if (response.ok) {
                 const data = await response.json();
@@ -127,8 +146,12 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 console.log('📦 All addresses:', allAddresses);
                 setCustomer(transformedCustomer);
             } else if (response.status === 401) {
-                // Not authenticated, use mock data for now
-                console.log('Not authenticated, using mock data');
+                console.log('❌ 401 Unauthorized - token may be invalid');
+                // Clear invalid token
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('isAuthenticated');
+                
+                // Use mock data
                 const savedCustomer = localStorage.getItem('mockCustomer');
                 if (savedCustomer) {
                     setCustomer(JSON.parse(savedCustomer));
@@ -147,7 +170,9 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                     localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
                 }
             } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                console.error('❌ API request failed:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
         } catch (err) {
             console.error('Failed to fetch customer:', err);
@@ -171,7 +196,9 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             console.log('🔄 Updating customer with data:', data);
 
             const token = localStorage.getItem('authToken');
-            if (!token) {
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            
+            if (!token || !isAuthenticated) {
                 throw new Error('No authentication token found');
             }
 
@@ -383,16 +410,27 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
 
             // Try to add via API first
             const token = localStorage.getItem('authToken');
-            console.log('🔑 Token available:', !!token);
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            
+            console.log('🔑 Auth state:', { token: !!token, isAuthenticated });
+            
+            if (!token || !isAuthenticated) {
+                console.log('❌ No authentication, using mock data');
+                // Fallback to local storage
+                const updatedCustomer = {
+                    ...customer!,
+                    billing_address: { ...address, id: `billing_${Date.now()}` }
+                };
+                setCustomer(updatedCustomer);
+                localStorage.setItem('mockCustomer', JSON.stringify(updatedCustomer));
+                return;
+            }
 
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'x-publishable-api-key': API_CONFIG.PUBLISHABLE_KEY,
+                'Authorization': `Bearer ${token}`,
             };
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
 
             // In Medusa, billing address needs the is_default_billing flag
             const billingAddressData = {
