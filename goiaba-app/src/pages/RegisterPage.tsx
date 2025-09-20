@@ -119,8 +119,7 @@ const RegisterPage: React.FC = () => {
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('authStateChanged'));
       
-      console.log('✅ Registration completed successfully');
-      console.log('👤 Customer created:', customer);
+      console.log('✅ Registration completed successfully - not auto-fetching customer data');
 
       setToastMessage('Account created successfully! Welcome!');
       setToastColor('success');

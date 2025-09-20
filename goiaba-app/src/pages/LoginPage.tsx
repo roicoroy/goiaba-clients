@@ -71,7 +71,7 @@ const LoginPage: React.FC = () => {
       setTimeout(() => {
         console.log('📢 Dispatching authStateChanged event');
         window.dispatchEvent(new CustomEvent('authStateChanged'));
-      }, 100);
+      }, 100); // Just notify, don't auto-fetch customer data
       
       // Navigate to main app after a short delay to show success message
       setTimeout(() => {

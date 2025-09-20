@@ -675,48 +675,29 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
         }
     };
 
-    // Load customer when authenticated
+    // Initialize with mock data on mount
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-        console.log('🔄 CustomerContext useEffect - checking auth state:', { 
-            token: !!token, 
-            isAuthenticated,
-            tokenLength: token?.length || 0
-        });
-
-        if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true') {
-            console.log('✅ Valid authentication found, fetching customer');
-            fetchCustomer();
+        console.log('🔄 CustomerContext initializing...');
+        // Always start with mock data - only fetch real data when explicitly requested
+        const savedCustomer = localStorage.getItem('mockCustomer');
+        if (savedCustomer) {
+            console.log('📦 Loading saved mock customer');
+            setCustomer(JSON.parse(savedCustomer));
         } else {
-            console.log('❌ No valid authentication, using mock data', {
-                hasToken: !!token,
-                tokenValid: token && token !== 'null' && token !== 'undefined' && token.trim().length > 0,
-                isAuthenticatedValue: isAuthenticated
-            });
-            // Load mock data if not authenticated
-            const savedCustomer = localStorage.getItem('mockCustomer');
-            if (savedCustomer) {
-                console.log('📦 Loading saved mock customer');
-                setCustomer(JSON.parse(savedCustomer));
-            } else {
-                console.log('🆕 Creating new mock customer');
-                // Create mock customer data
-                const mockCustomer: Customer = {
-                    id: 'customer_mock_123',
-                    email: 'test02@test.com',
-                    first_name: 'John',
-                    last_name: 'Doe',
-                    phone: '+1234567890',
-                    billing_address: undefined,
-                    shipping_addresses: [],
-                };
-                setCustomer(mockCustomer);
-                localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
-            }
+            console.log('🆕 Creating new mock customer');
+            const mockCustomer: Customer = {
+                id: 'customer_mock_123',
+                email: 'test02@test.com',
+                first_name: 'John',
+                last_name: 'Doe',
+                phone: '+1234567890',
+                billing_address: undefined,
+                shipping_addresses: [],
+            };
+            setCustomer(mockCustomer);
+            localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
         }
-    }, []); // Remove fetchCustomer dependency to prevent infinite loops
+    }, []);
 
     // Listen for authentication state changes
     useEffect(() => {
@@ -746,15 +727,8 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             const token = localStorage.getItem('authToken');
             const isAuthenticated = localStorage.getItem('isAuthenticated');
 
-            console.log('🔔 Auth change event:', { token: !!token, isAuthenticated });
-
-            if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true') {
-                console.log('🔄 Auth change detected, fetching customer data');
-                // Add delay to prevent rapid successive calls
-                setTimeout(() => {
-                    fetchCustomer();
-                }, 500);
-            }
+            console.log('🔔 Auth change event - not auto-fetching customer data');
+            // Don't automatically fetch customer data - let components request it when needed
         };
 
         window.addEventListener('authStateChanged', handleAuthChange);

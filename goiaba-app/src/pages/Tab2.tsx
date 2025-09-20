@@ -46,6 +46,7 @@ const Tab2: React.FC = () => {
     customer,
     isLoading,
     error,
+    fetchCustomer,
     updateCustomer,
     addShippingAddress,
     updateShippingAddress,
@@ -61,6 +62,19 @@ const Tab2: React.FC = () => {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
   const [showCustomerEditForm, setShowCustomerEditForm] = useState(false);
+
+  // Fetch customer data when this tab is accessed
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    
+    if (token && token !== 'null' && token !== 'undefined' && token.trim().length > 0 && isAuthenticated === 'true') {
+      console.log('👤 Profile tab accessed - fetching real customer data');
+      fetchCustomer();
+    } else {
+      console.log('👤 Profile tab accessed - using mock data (not authenticated)');
+    }
+  }, []); // Only run once when component mounts
 
   const handleAddAddress = (type: 'shipping' | 'billing') => {
     setAddressType(type);
