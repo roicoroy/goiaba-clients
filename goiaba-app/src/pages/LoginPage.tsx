@@ -21,6 +21,7 @@ import { logIn, mail, lockClosed } from 'ionicons/icons';
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { API_CONFIG } from '../utils/constants';
+import { AuthService } from '../services/authService';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("test02@test.com");
