@@ -96,7 +96,6 @@ export class AuthService {
 
       const response = await fetch(`${this.baseUrl}/auth/customer/emailpass`, {
         method: 'POST',
-        credentials: 'include',
         headers: this.getHeaders(),
         body: JSON.stringify(payload),
       });
@@ -114,8 +113,22 @@ export class AuthService {
       console.log('✅ Login successful, response data:', data);
       console.log('🔑 Token received:', !!data.token, 'length:', data.token?.length);
 
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('authStateChanged'));
+      // Test the token immediately to verify it works
+      console.log('🧪 Testing token validity...');
+      const testResponse = await fetch(`${this.baseUrl}/store/customers/me`, {
+        method: 'GET',
+        headers: this.getHeaders(true, data.token),
+      });
+      
+      console.log('🧪 Token test response:', testResponse.status, testResponse.ok);
+      
+      if (!testResponse.ok) {
+        console.warn('⚠️ Token test failed, but proceeding anyway');
+        const testError = await testResponse.text();
+        console.warn('⚠️ Test error details:', testError);
+      } else {
+        console.log('✅ Token is valid and working');
+      }
 
       return data;
     } catch (error) {

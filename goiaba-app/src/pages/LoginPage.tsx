@@ -63,19 +63,21 @@ const LoginPage: React.FC = () => {
         isAuthenticated: localStorage.getItem("isAuthenticated")
       });
       
-      // Dispatch custom event to notify other components immediately
-      console.log('📢 Dispatching authStateChanged event');
-      window.dispatchEvent(new CustomEvent('authStateChanged'));
-      
       setToastMessage('Login successful! Welcome back!');
       setToastColor('success');
       setShowToast(true);
+      
+      // Dispatch custom event to notify other components after a delay
+      setTimeout(() => {
+        console.log('📢 Dispatching authStateChanged event');
+        window.dispatchEvent(new CustomEvent('authStateChanged'));
+      }, 100);
       
       // Navigate to main app after a short delay to show success message
       setTimeout(() => {
         console.log('🚀 Navigating to main app');
         history.push("/tabs/tab1");
-      }, 1000);
+      }, 1500);
       
     } catch (error) {
       console.error("Login error:", error);
