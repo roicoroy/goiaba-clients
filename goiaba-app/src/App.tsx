@@ -52,7 +52,18 @@ import './theme/variables.css';
 setupIonicReact();
 
 const App: React.FC = () => {
-  const isAuthenticated = () => !!localStorage.getItem('isAuthenticated');
+  const isAuthenticated = () => {
+    const token = localStorage.getItem('authToken');
+    const authFlag = localStorage.getItem('isAuthenticated');
+    const isValid = token && token !== 'null' && token !== 'undefined' && authFlag === 'true';
+    console.log('🔍 App isAuthenticated check:', { 
+      hasToken: !!token, 
+      authFlag, 
+      isValid,
+      tokenLength: token?.length || 0 
+    });
+    return isValid;
+  };
 
   return (
     <ErrorBoundary>

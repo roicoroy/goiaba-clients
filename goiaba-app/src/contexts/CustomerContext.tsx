@@ -77,7 +77,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
 
             console.log('🔍 fetchCustomer called:', { token: !!token, isAuthenticated });
 
-            if (!token || !isAuthenticated) {
+            if (!token || token === 'null' || token === 'undefined' || isAuthenticated !== 'true') {
                 console.log('❌ No authentication found, using mock data');
                 // Use mock data if not authenticated
                 const savedCustomer = localStorage.getItem('mockCustomer');
@@ -106,6 +106,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             };
 
             console.log('🔑 Making authenticated request to /store/customers/me');
+            console.log('🔑 Token preview:', token.substring(0, 20) + '...');
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/store/customers/me`, {
                 method: 'GET',
@@ -145,6 +146,9 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 console.log('🚚 Default shipping address:', defaultShippingAddress);
                 console.log('📦 All addresses:', allAddresses);
                 setCustomer(transformedCustomer);
+                
+                // Clear mock data since we have real data
+                localStorage.removeItem('mockCustomer');
             } else if (response.status === 401) {
                 console.log('❌ 401 Unauthorized - token may be invalid');
                 // Clear invalid token
@@ -670,13 +674,18 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             tokenLength: token?.length || 0
         });
 
-        if (token && token.length > 0 && isAuthenticated === 'true') {
+        if (token && token !== 'null' && token !== 'undefined' && token.length > 0 && isAuthenticated === 'true') {
             console.log('✅ Valid authentication found, fetching customer');
-            fetchCustomer();
+            // Add a small delay to prevent multiple rapid calls
+            const timeoutId = setTimeout(() => {
+                fetchCustomer();
+            }, 100);
+            
+            return () => clearTimeout(timeoutId);
         } else {
             console.log('❌ No valid authentication, using mock data', {
                 hasToken: !!token,
-                tokenValid: token && token.length > 0,
+                tokenValid: token && token !== 'null' && token !== 'undefined' && token.length > 0,
                 isAuthenticatedValue: isAuthenticated
             });
             // Load mock data if not authenticated
@@ -700,7 +709,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 localStorage.setItem('mockCustomer', JSON.stringify(mockCustomer));
             }
         }
-    }, [fetchCustomer]);
+    }, []); // Remove fetchCustomer dependency to prevent infinite loops
 
     // Listen for authentication state changes
     useEffect(() => {
@@ -715,7 +724,7 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
                 customerId: customer?.id 
             });
 
-            if (token && token.length > 0 && isAuthenticated === 'true' && customer?.id?.startsWith('customer_mock')) {
+            if (token && token !== 'null' && token !== 'undefined' && token.length > 0 && isAuthenticated === 'true' && customer?.id?.startsWith('customer_mock')) {
                 // User has token but still showing mock data - fetch real data
                 console.log('🔄 Fetching real customer data after storage change');
                 fetchCustomer();
@@ -732,9 +741,12 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
 
             console.log('🔔 Auth change event:', { token: !!token, isAuthenticated });
 
-            if (token && token.length > 0 && isAuthenticated === 'true') {
+            if (token && token !== 'null' && token !== 'undefined' && token.length > 0 && isAuthenticated === 'true') {
                 console.log('🔄 Auth change detected, fetching customer data');
-                fetchCustomer();
+                // Add delay to prevent rapid successive calls
+                setTimeout(() => {
+                    fetchCustomer();
+                }, 200);
             }
         };
 
@@ -744,12 +756,12 @@ export const CustomerProvider: React.FC<CustomerProviderProps> = ({ children }) 
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('authStateChanged', handleAuthChange);
         };
-    }, [fetchCustomer, customer?.id]);
+    }, [customer?.id]); // Remove fetchCustomer dependency
 
     const refreshCustomerData = () => {
         const token = localStorage.getItem('authToken');
         const isAuthenticated = localStorage.getItem('isAuthenticated');
-        if (token && isAuthenticated === 'true') {
+        if (token && token !== 'null' && token !== 'undefined' && isAuthenticated === 'true') {
             console.log('🔄 Manually refreshing customer data');
             fetchCustomer();
         } else {

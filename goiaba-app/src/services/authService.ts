@@ -92,6 +92,7 @@ export class AuthService {
     try {
       console.log('🔐 Starting login process...');
       console.log('📧 Email:', payload.email);
+      console.log('🌐 API URL:', `${this.baseUrl}/auth/customer/emailpass`);
 
       const response = await fetch(`${this.baseUrl}/auth/customer/emailpass`, {
         method: 'POST',
@@ -100,6 +101,9 @@ export class AuthService {
         body: JSON.stringify(payload),
       });
 
+      console.log('📡 Login response status:', response.status);
+      console.log('📡 Login response ok:', response.ok);
+      
       if (!response.ok) {
         const errorData = await response.text();
         console.error('❌ Login failed:', response.status, errorData);
@@ -107,7 +111,8 @@ export class AuthService {
       }
 
       const data: LoginResponse = await response.json();
-      console.log('✅ Login successful');
+      console.log('✅ Login successful, response data:', data);
+      console.log('🔑 Token received:', !!data.token, 'length:', data.token?.length);
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('authStateChanged'));

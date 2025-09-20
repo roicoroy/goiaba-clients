@@ -36,14 +36,23 @@ const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       
+      console.log('🔐 Starting login with credentials:', { email, passwordLength: password.length });
+      
       // Use the AuthService for consistent authentication
       const { token } = await AuthService.login({ email, password });
       
       console.log('🔑 Login successful, token received:', !!token);
+      console.log('🔑 Token length:', token?.length);
+      console.log('🔑 Token preview:', token?.substring(0, 20) + '...');
       
       // Store authentication data
       localStorage.setItem("authToken", token);
       localStorage.setItem("isAuthenticated", "true");
+      
+      // Verify storage immediately
+      const storedToken = localStorage.getItem("authToken");
+      const storedAuth = localStorage.getItem("isAuthenticated");
+      console.log('💾 Verification - stored token:', !!storedToken, 'auth flag:', storedAuth);
       
       // Clear any existing mock data since we now have real auth
       localStorage.removeItem("mockCustomer");
@@ -54,12 +63,17 @@ const LoginPage: React.FC = () => {
         isAuthenticated: localStorage.getItem("isAuthenticated")
       });
       
+      // Dispatch custom event to notify other components immediately
+      console.log('📢 Dispatching authStateChanged event');
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+      
       setToastMessage('Login successful! Welcome back!');
       setToastColor('success');
       setShowToast(true);
       
       // Navigate to main app after a short delay to show success message
       setTimeout(() => {
+        console.log('🚀 Navigating to main app');
         history.push("/tabs/tab1");
       }, 1000);
       
