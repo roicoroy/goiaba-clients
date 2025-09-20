@@ -32,34 +32,75 @@ interface ProductDetailsParams {
 }
 
 const ProductDetailsPage: React.FC = () => {
+    console.log('🔍 ProductDetailsPage: Component rendering started');
+    
     const { id } = useParams<ProductDetailsParams>();
+    console.log('🔍 ProductDetailsPage: Product ID from params:', id);
+    
     const { selectedRegion } = useRegionContext();
+    console.log('🔍 ProductDetailsPage: Selected region:', selectedRegion);
+    
     const { product, isLoading, isError } = useProduct(id, {
         region_id: selectedRegion?.id,
         fields: "*variants.calculated_price",
         enabled: !!selectedRegion,
     }) as { product: MedusaProduct | undefined, isLoading: boolean, isError: boolean };
+    
+    console.log('🔍 ProductDetailsPage: useProduct hook result:', {
+        product: !!product,
+        isLoading,
+        isError,
+        productId: product?.id,
+        productTitle: product?.title
+    });
 
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+    
+    console.log('🔍 ProductDetailsPage: Component state:', {
+        imageLoading,
+        imageError,
+        isCartModalOpen
+    });
 
     useEffect(() => {
+        console.log('🔍 ProductDetailsPage: useEffect triggered for thumbnail:', product?.thumbnail);
         if (product?.thumbnail) {
             setImageLoading(true);
             setImageError(false);
         }
     }, [product?.thumbnail]);
+    
+    console.log('🔍 ProductDetailsPage: About to render, checking conditions...');
+    console.log('🔍 ProductDetailsPage: isLoading =', isLoading);
+    console.log('🔍 ProductDetailsPage: isError =', isError);
+    console.log('🔍 ProductDetailsPage: product exists =', !!product);
 
     if (isLoading) {
+        console.log('🔍 ProductDetailsPage: Rendering loading state');
         return (
             <IonPage>
-                <IonLoading isOpen={true} message={"Loading product details..."} />
+                <IonHeader>
+                    <IonToolbar>
+                        <IonButtons slot="start">
+                            <IonBackButton defaultHref="/tabs/tab1" />
+                        </IonButtons>
+                        <IonTitle>Loading...</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent>
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                        <IonSpinner />
+                        <IonText style={{ marginLeft: '1rem' }}>Loading product details...</IonText>
+                    </div>
+                </IonContent>
             </IonPage>
         );
     }
 
     if (isError || !product) {
+        console.log('🔍 ProductDetailsPage: Rendering error state');
         return (
             <IonPage>
                 <IonHeader>
@@ -71,16 +112,34 @@ const ProductDetailsPage: React.FC = () => {
                     </IonToolbar>
                 </IonHeader>
                 <IonContent>
-                    <IonItem>
-                        <IonLabel>Error loading product details</IonLabel>
-                    </IonItem>
+                    <IonCard>
+                        <IonCardContent>
+                            <IonText color="danger">
+                                <h2>Product Not Found</h2>
+                                <p>The product you're looking for could not be loaded.</p>
+                                <p>Product ID: {id}</p>
+                                <p>Region: {selectedRegion?.name || 'No region selected'}</p>
+                            </IonText>
+                        </IonCardContent>
+                    </IonCard>
                 </IonContent>
             </IonPage>
         );
     }
+    
+    console.log('🔍 ProductDetailsPage: Rendering main product view');
+    console.log('🔍 ProductDetailsPage: Product data:', {
+        id: product.id,
+        title: product.title,
+        hasDescription: !!product.description,
+        hasThumbnail: !!product.thumbnail,
+        variantsCount: product.variants?.length || 0,
+        tagsCount: product.tags?.length || 0
+    });
 
     return (
         <IonPage>
+            {console.log('🔍 ProductDetailsPage: Starting main render')}
             <IonHeader>
                 <IonToolbar>
                     <IonButtons slot="start">
@@ -93,6 +152,7 @@ const ProductDetailsPage: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent fullscreen className="ion-padding">
+                {console.log('🔍 ProductDetailsPage: Rendering content')}
                 {selectedRegion && (
                     <IonItem lines="none">
                         <IonLabel>
@@ -101,8 +161,11 @@ const ProductDetailsPage: React.FC = () => {
                     </IonItem>
                 )}
                 <div className="product-details-container">
+                    {console.log('🔍 ProductDetailsPage: Rendering product card')}
                     <IonCard>
                         {product.thumbnail && (
+                            <>
+                                {console.log('🔍 ProductDetailsPage: Rendering thumbnail:', product.thumbnail)}
                             <div className="image-container">
                                 {imageLoading && !imageError && (
                                     <div className="image-loading">
@@ -122,8 +185,12 @@ const ProductDetailsPage: React.FC = () => {
                                 <img
                                     src={product.thumbnail}
                                     alt={product.title}
-                                    onLoad={() => setImageLoading(false)}
+                                        onLoad={() => {
+                                            console.log('🔍 ProductDetailsPage: Image loaded successfully');
+                                            setImageLoading(false);
+                                        }}
                                     onError={() => {
+                                            console.log('🔍 ProductDetailsPage: Image failed to load');
                                         setImageLoading(false);
                                         setImageError(true);
                                     }}
@@ -135,12 +202,17 @@ const ProductDetailsPage: React.FC = () => {
                                     }}
                                 />
                             </div>
+                            </>
                         )}
                         <IonCardHeader>
+                            {console.log('🔍 ProductDetailsPage: Rendering card header')}
                             <IonCardTitle>{product.title}</IonCardTitle>
                         </IonCardHeader>
                         <IonCardContent>
+                            {console.log('🔍 ProductDetailsPage: Rendering card content')}
                             {product.description && (
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering description')}
                                 <IonText>
                                     <p>{product.description}</p>
                                 </IonText>
@@ -158,14 +230,18 @@ const ProductDetailsPage: React.FC = () => {
                                                 <IonLabel>
                                                     <h3>{variant.title}</h3>
                                                     {price && (
+                                </>
                                                         <p>
                                                             {new Intl.NumberFormat(undefined, {
                                                                 style: "currency",
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering variants, count:', product.variants.length)}
                                                                 currency: price.currency_code,
                                                             }).format(price.calculated_amount)}
                                                         </p>
                                                     )}
                                                     {!price && selectedRegion && (
+                                            console.log(`🔍 ProductDetailsPage: Rendering variant ${index}:`, variant.id, variant.title);
                                                         <p>Price not available for {selectedRegion.name}</p>
                                                     )}
                                                 </IonLabel>
@@ -187,28 +263,38 @@ const ProductDetailsPage: React.FC = () => {
                                             </IonChip>
                                         ))}
                                     </div>
+                                </>
                                 </div>
                             )}
 
                             {product.variants && product.variants.length > 0 && (
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering tags, count:', product.tags.length)}
                                 <div className="add-to-cart-section">
                                     <IonText>
                                         <h3>Add to Cart</h3>
                                     </IonText>
                                     <AddToCart variants={product.variants} />
                                 </div>
+                                </>
+                                </>
                             )}
                         </IonCardContent>
                     </IonCard>
                 </div>
+                {console.log('🔍 ProductDetailsPage: Finished rendering content')}
             </IonContent>
             
+            {console.log('🔍 ProductDetailsPage: Rendering CartModal')}
             <CartModal 
                 isOpen={isCartModalOpen} 
                 onClose={() => setIsCartModalOpen(false)} 
             />
+            {console.log('🔍 ProductDetailsPage: Component render complete')}
         </IonPage>
     );
 };
 
 export default ProductDetailsPage;
+                                <>
+                                    {console.log('🔍 ProductDetailsPage: Rendering AddToCart component')}
