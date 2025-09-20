@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
     IonContent,
     IonHeader,
@@ -19,7 +20,6 @@ import {
 } from "@ionic/react";
 import { useProduct } from "medusa-react";
 import { useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { useRegionContext } from "../contexts/RegionContext";
 import AddToCart from "../components/AddToCart";
 import CartIcon from "../components/CartIcon";
@@ -102,103 +102,103 @@ const ProductDetailsPage: React.FC = () => {
                 )}
                 <div className="product-details-container">
                     <IonCard>
-                    {product.thumbnail && (
-                        <div className="image-container">
-                            {imageLoading && !imageError && (
-                                <div className="image-loading">
-                                    <IonSpinner name="crescent" />
+                        {product.thumbnail && (
+                            <div className="image-container">
+                                {imageLoading && !imageError && (
+                                    <div className="image-loading">
+                                        <IonSpinner name="crescent" />
+                                        <IonText>
+                                            <p>Loading image...</p>
+                                        </IonText>
+                                    </div>
+                                )}
+                                {imageError && (
+                                    <div className="image-error">
+                                        <IonText>
+                                            <p>Failed to load image</p>
+                                        </IonText>
+                                    </div>
+                                )}
+                                <img
+                                    src={product.thumbnail}
+                                    alt={product.title}
+                                    onLoad={() => setImageLoading(false)}
+                                    onError={() => {
+                                        setImageLoading(false);
+                                        setImageError(true);
+                                    }}
+                                    style={{
+                                        display: imageLoading || imageError ? 'none' : 'block',
+                                        maxHeight: '300px',
+                                        width: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+                            </div>
+                        )}
+                        <IonCardHeader>
+                            <IonCardTitle>{product.title}</IonCardTitle>
+                        </IonCardHeader>
+                        <IonCardContent>
+                            {product.description && (
+                                <IonText>
+                                    <p>{product.description}</p>
+                                </IonText>
+                            )}
+
+                            {product.variants && product.variants.length > 0 && (
+                                <div className="variants-section">
                                     <IonText>
-                                        <p>Loading image...</p>
+                                        <h3>Variants</h3>
                                     </IonText>
+                                    {product.variants.map((variant: MedusaProductVariant) => {
+                                        const price = variant.calculated_price;
+                                        return (
+                                            <IonItem key={variant.id}>
+                                                <IonLabel>
+                                                    <h3>{variant.title}</h3>
+                                                    {price && (
+                                                        <p>
+                                                            {new Intl.NumberFormat(undefined, {
+                                                                style: "currency",
+                                                                currency: price.currency_code,
+                                                            }).format(price.calculated_amount)}
+                                                        </p>
+                                                    )}
+                                                    {!price && selectedRegion && (
+                                                        <p>Price not available for {selectedRegion.name}</p>
+                                                    )}
+                                                </IonLabel>
+                                            </IonItem>
+                                        );
+                                    })}
                                 </div>
                             )}
-                            {imageError && (
-                                <div className="image-error">
+
+                            {product.tags && product.tags.length > 0 && (
+                                <div className="tags-section">
                                     <IonText>
-                                        <p>Failed to load image</p>
+                                        <h3>Tags</h3>
                                     </IonText>
+                                    <div className="tags-container">
+                                        {product.tags.map((tag: { id: string, value: string }) => (
+                                            <IonChip key={tag.id} color="primary">
+                                                <IonLabel>{tag.value}</IonLabel>
+                                            </IonChip>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
-                            <img
-                                src={product.thumbnail}
-                                alt={product.title}
-                                onLoad={() => setImageLoading(false)}
-                                onError={() => {
-                                    setImageLoading(false);
-                                    setImageError(true);
-                                }}
-                                style={{
-                                    display: imageLoading || imageError ? 'none' : 'block',
-                                    maxHeight: '300px',
-                                    width: '100%',
-                                    objectFit: 'cover'
-                                }}
-                            />
-                        </div>
-                    )}
-                    <IonCardHeader>
-                        <IonCardTitle>{product.title}</IonCardTitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        {product.description && (
-                            <IonText>
-                                <p>{product.description}</p>
-                            </IonText>
-                        )}
 
-                        {product.variants && product.variants.length > 0 && (
-                            <div className="variants-section">
-                                <IonText>
-                                    <h3>Variants</h3>
-                                </IonText>
-                                {product.variants.map((variant: MedusaProductVariant) => {
-                                    const price = variant.calculated_price;
-                                    return (
-                                        <IonItem key={variant.id}>
-                                            <IonLabel>
-                                                <h3>{variant.title}</h3>
-                                                {price && (
-                                                    <p>
-                                                        {new Intl.NumberFormat(undefined, {
-                                                            style: "currency",
-                                                            currency: price.currency_code,
-                                                        }).format(price.calculated_amount)}
-                                                    </p>
-                                                )}
-                                                {!price && selectedRegion && (
-                                                    <p>Price not available for {selectedRegion.name}</p>
-                                                )}
-                                            </IonLabel>
-                                        </IonItem>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {product.tags && product.tags.length > 0 && (
-                            <div className="tags-section">
-                                <IonText>
-                                    <h3>Tags</h3>
-                                </IonText>
-                                <div className="tags-container">
-                                    {product.tags.map((tag: { id: string, value: string }) => (
-                                        <IonChip key={tag.id} color="primary">
-                                            <IonLabel>{tag.value}</IonLabel>
-                                        </IonChip>
-                                    ))}
+                            {product.variants && product.variants.length > 0 && (
+                                <div className="add-to-cart-section">
+                                    <IonText>
+                                        <h3>Add to Cart</h3>
+                                    </IonText>
+                                    <AddToCart variants={product.variants} />
                                 </div>
-                            </div>
-                        )}
-
-                        {product.variants && product.variants.length > 0 && (
-                            <div className="add-to-cart-section">
-                                <IonText>
-                                    <h3>Add to Cart</h3>
-                                </IonText>
-                                <AddToCart variants={product.variants} />
-                            </div>
-                        )}
-                    </IonCardContent>
+                            )}
+                        </IonCardContent>
                     </IonCard>
                 </div>
             </IonContent>
