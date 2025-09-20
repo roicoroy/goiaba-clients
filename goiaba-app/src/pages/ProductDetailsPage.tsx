@@ -92,10 +92,9 @@ const ProductDetailsPage: React.FC = () => {
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent fullscreen scrollY={true} className="ion-padding">
-                <div className="product-details-container">
+            <IonContent scrollY={true}>
                 {selectedRegion && (
-                    <IonItem lines="none">
+                    <IonItem lines="none" style={{ margin: '0 1rem' }}>
                         <IonLabel>
                             <p>Prices shown in {selectedRegion.name} ({selectedRegion.currency_code.toUpperCase()})</p>
                         </IonLabel>
@@ -200,7 +199,6 @@ const ProductDetailsPage: React.FC = () => {
                         )}
                     </IonCardContent>
                 </IonCard>
-                </div>
             </IonContent>
             
             <CartModal 
