@@ -15,6 +15,7 @@ import Tab1 from './pages/Tab1';
 import Tab2 from './pages/Tab2';
 import Tab3 from './pages/Tab3';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -59,6 +60,7 @@ const App: React.FC = () => {
         <IonReactRouter>
           <IonRouterOutlet>
             <Route path="/login" component={LoginPage} exact={true} />
+            <Route path="/register" component={RegisterPage} exact={true} />
             <Route
               render={() => (
                 <AuthenticatedTabs />
