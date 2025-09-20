@@ -32,47 +32,43 @@ interface ProductDetailsParams {
 }
 
 const ProductDetailsPage: React.FC = () => {
-    console.log('🔍 ProductDetailsPage: Component rendering started');
+    console.log('🚀 ProductDetailsPage: Component function called');
     
     const { id } = useParams<ProductDetailsParams>();
     console.log('🔍 ProductDetailsPage: Product ID from params:', id);
     
     const { selectedRegion } = useRegionContext();
-    console.log('🔍 ProductDetailsPage: Selected region:', selectedRegion);
+    console.log('🔍 ProductDetailsPage: Selected region:', selectedRegion?.id, selectedRegion?.name);
     
+    console.log('🔍 ProductDetailsPage: About to call useProduct hook...');
     const { product, isLoading, isError } = useProduct(id, {
         region_id: selectedRegion?.id,
         fields: "*variants.calculated_price",
         enabled: !!selectedRegion,
     }) as { product: MedusaProduct | undefined, isLoading: boolean, isError: boolean };
-    
-    console.log('🔍 ProductDetailsPage: useProduct hook result:', {
-        product: !!product,
-        isLoading,
+    console.log('🔍 ProductDetailsPage: useProduct hook completed:', { 
+        hasProduct: !!product, 
+        isLoading, 
         isError,
-        productId: product?.id,
-        productTitle: product?.title
+        productTitle: product?.title 
     });
 
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const [isCartModalOpen, setIsCartModalOpen] = useState(false);
     
-    console.log('🔍 ProductDetailsPage: Component state:', {
-        imageLoading,
-        imageError,
-        isCartModalOpen
-    });
+    console.log('🔍 ProductDetailsPage: State initialized');
 
     useEffect(() => {
-        console.log('🔍 ProductDetailsPage: useEffect triggered for thumbnail:', product?.thumbnail);
+        console.log('🔍 ProductDetailsPage: useEffect triggered for thumbnail');
         if (product?.thumbnail) {
+            console.log('🔍 ProductDetailsPage: Setting image loading state');
             setImageLoading(true);
             setImageError(false);
         }
     }, [product?.thumbnail]);
     
-    console.log('🔍 ProductDetailsPage: About to render, checking conditions...');
+    console.log('🔍 ProductDetailsPage: About to check render conditions...');
     console.log('🔍 ProductDetailsPage: isLoading =', isLoading);
     console.log('🔍 ProductDetailsPage: isError =', isError);
     console.log('🔍 ProductDetailsPage: product exists =', !!product);
@@ -126,20 +122,18 @@ const ProductDetailsPage: React.FC = () => {
             </IonPage>
         );
     }
-    
-    console.log('🔍 ProductDetailsPage: Rendering main product view');
-    console.log('🔍 ProductDetailsPage: Product data:', {
+
+    console.log('🔍 ProductDetailsPage: About to render main content');
+    console.log('🔍 ProductDetailsPage: Product data summary:', {
         id: product.id,
         title: product.title,
-        hasDescription: !!product.description,
-        hasThumbnail: !!product.thumbnail,
-        variantsCount: product.variants?.length || 0,
-        tagsCount: product.tags?.length || 0
+        hasVariants: !!product.variants?.length,
+        variantCount: product.variants?.length || 0
     });
 
     return (
         <IonPage>
-            {console.log('🔍 ProductDetailsPage: Starting main render')}
+            {console.log('🔍 ProductDetailsPage: Starting main JSX render')}
             <IonHeader>
                 <IonToolbar>
                     <IonButtons slot="start">
@@ -152,20 +146,24 @@ const ProductDetailsPage: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent fullscreen className="ion-padding">
-                {console.log('🔍 ProductDetailsPage: Rendering content')}
+                {console.log('🔍 ProductDetailsPage: Rendering IonContent')}
                 {selectedRegion && (
+                    <>
+                    {console.log('🔍 ProductDetailsPage: Rendering region info')}
                     <IonItem lines="none">
                         <IonLabel>
                             <p>Prices shown in {selectedRegion.name} ({selectedRegion.currency_code.toUpperCase()})</p>
                         </IonLabel>
                     </IonItem>
+                    </>
                 )}
                 <div className="product-details-container">
-                    {console.log('🔍 ProductDetailsPage: Rendering product card')}
+                    {console.log('🔍 ProductDetailsPage: Rendering product container')}
                     <IonCard>
+                        {console.log('🔍 ProductDetailsPage: Rendering product card')}
                         {product.thumbnail && (
                             <>
-                                {console.log('🔍 ProductDetailsPage: Rendering thumbnail:', product.thumbnail)}
+                            {console.log('🔍 ProductDetailsPage: Rendering thumbnail section')}
                             <div className="image-container">
                                 {imageLoading && !imageError && (
                                     <div className="image-loading">
@@ -212,7 +210,7 @@ const ProductDetailsPage: React.FC = () => {
                             {console.log('🔍 ProductDetailsPage: Rendering card content')}
                             {product.description && (
                                 <>
-                                    {console.log('🔍 ProductDetailsPage: Rendering description')}
+                                {console.log('🔍 ProductDetailsPage: Rendering description')}
                                 <IonText>
                                     <p>{product.description}</p>
                                 </IonText>
@@ -271,7 +269,7 @@ const ProductDetailsPage: React.FC = () => {
 
                             {product.variants && product.variants.length > 0 && (
                                 <>
-                                    {console.log('🔍 ProductDetailsPage: Rendering AddToCart component')}
+                                {console.log('🔍 ProductDetailsPage: About to render AddToCart - this might be where it freezes')}
                                 <div className="add-to-cart-section">
                                     <IonText>
                                         <h3>Add to Cart</h3>
@@ -283,10 +281,10 @@ const ProductDetailsPage: React.FC = () => {
                         </IonCardContent>
                     </IonCard>
                 </div>
-                {console.log('🔍 ProductDetailsPage: Finished rendering content')}
+                {console.log('🔍 ProductDetailsPage: Finished rendering main content')}
             </IonContent>
             
-            {console.log('🔍 ProductDetailsPage: Rendering CartModal')}
+            {console.log('🔍 ProductDetailsPage: About to render CartModal')}
             <CartModal 
                 isOpen={isCartModalOpen} 
                 onClose={() => setIsCartModalOpen(false)} 
