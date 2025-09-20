@@ -92,15 +92,16 @@ const ProductDetailsPage: React.FC = () => {
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent scrollY={true}>
+            <IonContent fullscreen className="ion-padding">
                 {selectedRegion && (
-                    <IonItem lines="none" style={{ margin: '0 1rem' }}>
+                    <IonItem lines="none">
                         <IonLabel>
                             <p>Prices shown in {selectedRegion.name} ({selectedRegion.currency_code.toUpperCase()})</p>
                         </IonLabel>
                     </IonItem>
                 )}
-                <IonCard>
+                <div className="product-details-container">
+                    <IonCard>
                     {product.thumbnail && (
                         <div className="image-container">
                             {imageLoading && !imageError && (
@@ -198,7 +199,8 @@ const ProductDetailsPage: React.FC = () => {
                             </div>
                         )}
                     </IonCardContent>
-                </IonCard>
+                    </IonCard>
+                </div>
             </IonContent>
             
             <CartModal 
