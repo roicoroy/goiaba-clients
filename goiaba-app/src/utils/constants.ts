@@ -1,7 +1,7 @@
 export const API_CONFIG = {
   BASE_URL: 'http://localhost:9000',
-  PUBLISHABLE_KEY: 'pk_edc04a825a6de55a445591da014137039c2affad5b75340ee3cfa960db5dd28c',
-  STRIPE_PUBLISHABLE_KEY: 'pk_test_51•••••I2Y', // Replace with your actual Stripe publishable key
+  PUBLISHABLE_KEY: 'pk_ab18936f73e3e8ccbe247b44861e58684ca46c79aaaa8bb38beab5766012563c',
+  STRIPE_PUBLISHABLE_KEY: 'pk_test_51Pzad704q0B7q2wz8zASldczqkHqbIvXsB2DBO20OEkAC9q7RUvoiBcZ9NVOakZMTWtg2vxgcJQN0mUpXtrThg2D00fHtuTwvj',
 } as const;
 
 export const STORAGE_KEYS = {
