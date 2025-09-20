@@ -20,6 +20,8 @@
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
     "@medusajs/medusa-js": "^6.1.10",
+    "@stripe/react-stripe-js": "^4.0.2",
+    "@stripe/stripe-js": "^7.9.0",
     "@tanstack/react-query": "^4.40.1",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
